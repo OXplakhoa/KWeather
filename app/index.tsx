@@ -1,9 +1,20 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Location from 'expo-location';
+import Fontisto from '@expo/vector-icons/Fontisto';
+import { StatusBar } from "expo-status-bar";
+import dayjs from "dayjs";
 
 const {width: SCREEN_WIDTH} = Dimensions.get("window");
 const API_KEY = "8f63b0f21591bad5bd1a39eb583f51b2"
+
+const icons:any= {
+  Clouds: "cloudy",
+  Clear: "day-sunny",
+  Rain: "rains",
+  Drizzle: "day-rain",
+  Thunderstorm: "lightning",
+};
 
 export default function Index() {
   const [city,setCity] = useState("Loading...");
@@ -15,7 +26,7 @@ export default function Index() {
       setOk(false);
     }
     const {coords: {latitude,longitude}}= await Location.getCurrentPositionAsync({accuracy: 5})
-    const location = await Location.reverseGeocodeAsync({latitude,longitude},{useGoogleMaps: false})
+    const location = await Location.reverseGeocodeAsync({latitude,longitude})
     setCity(location[0].city ?? "Unknown");
     try {
       const res = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`);
@@ -41,8 +52,13 @@ export default function Index() {
   },[])
   return (
     <View style={styles.container}>
-      <View style={styles.city}>
-        <Text style={styles.cityName}>{city}</Text>
+      <StatusBar style="dark"/>
+      <View style={styles.city}> 
+        <View style={styles.cityContainer}>
+          <Text style={styles.cityName}>
+            {city}
+          </Text>
+        </View>
       </View>
       <ScrollView 
         pagingEnabled 
@@ -56,12 +72,20 @@ export default function Index() {
         </View>
         ) : (
           days.map((day:any,idx) => 
-          <View style={styles.day} key={idx}>
-            <Text style={styles.temp}>{parseFloat(day.main.temp).toFixed(1)}</Text>
-            <Text style={styles.summary}>{day.weather[0].main}</Text>
-            <Text style={styles.description}>{day.weather[0].description}</Text>
-          </View>)
-          )}
+            <View style={styles.day} key={idx}>
+          <View style={styles.row}>
+            <View style={styles.stats}>
+              <Text style={styles.temp}>{parseFloat(day.main.temp).toFixed(1)}</Text>
+              <Text style={styles.time}>{dayjs.unix(day.dt).format('dddd, D MMMM YYYY')}</Text>
+            </View>
+            <View style={styles.icon}>
+              <Fontisto name={icons[day.weather[0].main]} size={100} color="black" />
+              <Text style={styles.summary}>{day.weather[0].main}</Text>
+              <Text style={styles.description}>{day.weather[0].description}</Text>
+            </View>
+          </View>
+        </View>
+        ))}
       </ScrollView>                                                                                     
     </View>
   );
@@ -70,34 +94,82 @@ export default function Index() {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ff4a2b",
+    backgroundColor: "#b1fa06",
   },
   city: {
     flex: 1.2,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12, 
   },
   cityName: {
-    fontSize: 68,
-    fontWeight: "500",
-  }
-  ,
+    fontSize: 64, 
+    fontWeight: "bold",
+    color: "#333", 
+    textAlign: "center",
+    overflow: "hidden",
+  },
+  cityContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   weather: {
-
+    flex: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    marginTop: -20,
+    paddingVertical: 10,
   },
   day: {
     width: SCREEN_WIDTH,
-    alignItems: "center",
+    alignItems: "flex-start",
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomColor: "#ddd",
+    borderBottomWidth: 1, 
   },
   temp: {
-    marginTop: 50,
-    fontSize: 178
+    marginBottom: 8,
+    fontSize: 100,
+    fontWeight: "700",
+    color: "#444", 
+  },
+  time: {
+    fontSize: 30,
+    fontWeight: "500",
+    color: "#555", 
   },
   summary: {
-    marginTop: -30,
-    fontSize: 60,
+    fontSize: 28,
+    color: "#333",
+    fontWeight: "500",
+    marginTop: 8,
   },
   description: {
     fontSize: 20,
-  }
+    color: "#666", 
+    fontWeight: "400",
+    marginTop: 4,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 12, // Added space between sections
+  },
+  stats: {
+    flex: 2,
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    paddingRight: 16,
+  },
+  icon: {
+    marginTop: 20,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
 })
